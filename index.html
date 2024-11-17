@@ -30,16 +30,31 @@
         const database = getDatabase(app);
         const visitsRef = ref(database, 'visitCount');
 
-        // Increment Visit Count
-        get(visitsRef).then((snapshot) => {
-            let visitCount = snapshot.val() || 0; // Current count
-            visitCount++; // Increment count
-            set(visitsRef, visitCount); // Update the database
-            document.getElementById('visit-counter').textContent = visitCount; // Display count
-        }).catch((error) => {
-            console.error("Error updating visit count:", error);
-            document.getElementById('visit-counter').textContent = "Unable to load counter.";
-        });
+        // Check if user has visited before in the same session using sessionStorage
+        if (!sessionStorage.getItem('hasVisited')) {
+            // First-time visit: Increment the count
+            get(visitsRef).then((snapshot) => {
+                let visitCount = snapshot.val() || 0; // Current count from Firebase (or 0 if not set)
+                visitCount++; // Increment visit count
+                set(visitsRef, visitCount); // Update visit count in Firebase
+                document.getElementById('visit-counter').textContent = visitCount; // Display the updated count
+            }).catch((error) => {
+                console.error("Error updating visit count:", error);
+                document.getElementById('visit-counter').textContent = "Unable to load counter.";
+            });
+
+            // Mark the user as having visited in this session using sessionStorage
+            sessionStorage.setItem('hasVisited', 'true');
+        } else {
+            // If the user has visited before in the current session, just show the current count without incrementing
+            get(visitsRef).then((snapshot) => {
+                const visitCount = snapshot.val() || 0; // Display current count from Firebase
+                document.getElementById('visit-counter').textContent = visitCount;
+            }).catch((error) => {
+                console.error("Error loading visit count:", error);
+                document.getElementById('visit-counter').textContent = "Unable to load counter.";
+            });
+        }
     </script>
 </head>
 
